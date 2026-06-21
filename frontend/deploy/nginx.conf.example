@@ -1,15 +1,16 @@
-# 复制到 /etc/nginx/sites-available/silliconthink 后按需修改 domain、root
-# sudo ln -s /etc/nginx/sites-available/silliconthink /etc/nginx/sites-enabled/
+# Nginx 配置 — siliconthink.top
+# sudo cp nginx.conf.example /etc/nginx/sites-available/silliconthink
+# sudo ln -sf /etc/nginx/sites-available/silliconthink /etc/nginx/sites-enabled/
 # sudo nginx -t && sudo systemctl reload nginx
 
 server {
     listen 80;
-    server_name your-domain.com www.your-domain.com;
+    listen [::]:80;
+    server_name siliconthink.top www.siliconthink.top;
 
     root /var/www/silliconthink;
     index index.html;
 
-    # 静态资源长缓存（Vite 构建产物带 hash）
     location /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
@@ -25,5 +26,6 @@ server {
     gzip_min_length 256;
 }
 
-# HTTPS（推荐）：先用 certbot 申请证书
-# sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+# HTTPS:
+# sudo apt install -y certbot python3-certbot-nginx
+# sudo certbot --nginx -d siliconthink.top -d www.siliconthink.top
