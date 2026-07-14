@@ -68,14 +68,14 @@ mvn spring-boot:run
 # 1) 仓库已在 /opt/silliconthink（可用 frontend/deploy/server-setup.sh 先装前端）
 # 2) MySQL 建库并导入 schema.sql / data.sql
 sudo bash /opt/silliconthink/backend/deploy/server-setup.sh
-sudo vim /etc/silliconthink/application-prod.yml   # 改库密码、JWT、OAuth
+sudo vim /etc/silliconthink/backend.env              # 改 DB_NAME / DB_PASSWORD / JWT_SECRET
 sudo systemctl restart silliconthink-backend
 
 # 3) Nginx 增加 /api/ 反代（见 frontend/deploy/nginx.conf.example）后
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-生产配置在 **`/etc/silliconthink/application-prod.yml`**（不进 Git），jar 在 `/opt/silliconthink-runtime/app.jar`，进程由 systemd 托管。
+生产配置在 **`/etc/silliconthink/application-prod.yml`** + **`/etc/silliconthink/backend.env`**（库名/密码/JWT 用环境变量，不进 Git），jar 在 `/opt/silliconthink-runtime/app.jar`，进程由 systemd 托管。
 
 GitHub OAuth 回调请改为线上地址，例如：
 

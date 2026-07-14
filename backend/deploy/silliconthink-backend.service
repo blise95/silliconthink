@@ -10,8 +10,9 @@ Group=www-data
 WorkingDirectory=/opt/silliconthink-runtime
 Environment=JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 Environment=SPRING_PROFILES_ACTIVE=prod
-# 敏感配置放在 /etc/silliconthink/application-prod.yml（不进 Git）
 Environment=SPRING_CONFIG_ADDITIONAL_LOCATION=file:/etc/silliconthink/
+# 数据库名、密码、JWT 等放这里（不要提交到 Git）
+EnvironmentFile=-/etc/silliconthink/backend.env
 ExecStart=/usr/lib/jvm/java-17-openjdk-amd64/bin/java -Xms256m -Xmx512m -jar /opt/silliconthink-runtime/app.jar
 SuccessExitStatus=143
 Restart=on-failure
