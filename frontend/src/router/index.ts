@@ -39,6 +39,21 @@ const router = createRouter({
           component: () => import('@/pages/ProjectDetailView.vue'),
         },
         {
+          path: 'login',
+          name: 'login',
+          component: () => import('@/pages/LoginView.vue'),
+        },
+        {
+          path: 'register',
+          name: 'register',
+          component: () => import('@/pages/RegisterView.vue'),
+        },
+        {
+          path: 'oauth/callback',
+          name: 'oauth-callback',
+          component: () => import('@/pages/OAuthCallbackView.vue'),
+        },
+        {
           path: 'search',
           name: 'search',
           component: () => import('@/pages/SearchView.vue'),

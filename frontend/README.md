@@ -12,6 +12,7 @@ Vue 3 个人站点，Mock 数据驱动，视觉参考 [Omni-Growth](https://omni
 ```bash
 cd frontend
 npm install
+cp .env.example .env   # 可选
 npm run dev
 ```
 
@@ -21,22 +22,39 @@ npm run dev
 
 | 变量 | 说明 | 默认 |
 |------|------|------|
-| `VITE_USE_MOCK` | 是否使用 Mock 数据 | `true` |
+| `VITE_USE_MOCK` | 内容数据是否使用 Mock | `true` |
 | `VITE_SITE_URL` | 站点 URL（SEO 用） | `http://localhost:5173` |
+| `VITE_API_BASE_URL` | 后端 API 根地址 | `http://localhost:8080` |
+| `VITE_AUTH_USE_API` | 认证是否走真实后端（可与内容 Mock 并存） | `false` |
+
+### 认证联调
+
+1. 启动后端（见 `backend/README.md`），初始化 MySQL
+2. 前端 `.env`：
+
+```env
+VITE_USE_MOCK=true
+VITE_AUTH_USE_API=true
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+3. 打开 `/login` 或 `/register`；GitHub OAuth 需在后端配置 OAuth App，回调前端 `/oauth/callback`
+
+Mock 认证账号：`demo` / `demo1234`（仅 `VITE_AUTH_USE_API=false` 时）。
 
 ## 目录结构
 
 ```
 src/
 ├── components/     # UI、布局、博客、项目组件
-├── composables/    # 数据与页面逻辑
+├── composables/    # 数据与页面逻辑（含 useAuth）
 ├── mocks/          # Mock 静态数据
-├── pages/          # 路由页面
+├── pages/          # 路由页面（含登录/注册/OAuth 回调）
 ├── router/         # Vue Router
 ├── services/       # Repository 接口 + Mock/API 实现
 ├── styles/         # 设计令牌与全局样式
 ├── types/          # TypeScript 类型
-└── utils/          # Markdown 渲染等工具
+└── utils/          # HTTP / Markdown 等工具
 ```
 
 ## Mock 数据
@@ -62,6 +80,8 @@ npm run preview
 
 本项目是纯前端 SPA（Mock 数据打包进 JS），**只需 Nginx 托管静态文件**，无需 Node 常驻进程。
 
+若启用真实认证，需同时部署 `backend` 并配置 CORS / 反向代理。详见仓库根 README 与 `backend/README.md`。
+
 ### 方式一：本地构建 + 上传（推荐）
 
 **1. 本地构建**
@@ -75,7 +95,6 @@ npm run build
 **2. 上传 `dist/` 到服务器**
 
 ```bash
-# 示例：上传到 /var/www/silliconthink
 ssh user@your-server "sudo mkdir -p /var/www/silliconthink"
 rsync -avz --delete dist/ user@your-server:/var/www/silliconthink/
 ```
@@ -87,86 +106,9 @@ chmod +x deploy/deploy.sh
 ./deploy/deploy.sh user@your-server
 ```
 
-**3. 服务器安装 Nginx**
+**3. 服务器安装 Nginx** 并配置 History 模式 `try_files`（详见原部署章节）。
 
-```bash
-# Ubuntu / Debian
-sudo apt update && sudo apt install -y nginx
-
-# CentOS / RHEL
-sudo yum install -y nginx
-```
-
-**4. 配置 Nginx**
-
-复制 `deploy/nginx.conf.example` 到服务器，修改 `server_name` 和 `root`：
-
-```bash
-sudo cp deploy/nginx.conf.example /etc/nginx/sites-available/silliconthink
-# 编辑 your-domain.com 和 root 路径
-sudo ln -s /etc/nginx/sites-available/silliconthink /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-**关键**：Vue Router 使用 History 模式，必须配置：
-
-```nginx
-location / {
-    try_files $uri $uri/ /index.html;
-}
-```
-
-否则直接访问 `/blog` 等路径会 404。
-
-**5. HTTPS（推荐）**
-
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
-
-### 方式二：在服务器上构建
-
-```bash
-# 服务器需 Node.js 18+
-ssh user@your-server
-git clone <你的仓库> && cd silliconthink/frontend
-npm ci && npm run build
-sudo mkdir -p /var/www/silliconthink
-sudo cp -r dist/* /var/www/silliconthink/
-# 再按上面步骤配置 Nginx
-```
-
-### 生产环境变量（可选）
-
-构建前创建 `.env.production`：
-
-```env
-VITE_USE_MOCK=true
-VITE_SITE_URL=https://your-domain.com
-```
-
-然后 `npm run build`，SEO meta 会使用正确域名。
-
-### 更新站点
-
-改 mock 或代码后重新构建并 rsync：
-
-```bash
-npm run build
-rsync -avz --delete dist/ user@your-server:/var/www/silliconthink/
-```
-
-### 常见问题
-
-| 问题 | 处理 |
-|------|------|
-| 刷新子路由 404 | Nginx 加 `try_files ... /index.html` |
-| 页面空白 | 检查 Nginx `root` 是否指向 `dist` 内容目录 |
-| 权限错误 | `sudo chown -R www-data:www-data /var/www/silliconthink` |
-
-## 后续对接 API
+## 后续对接内容 API
 
 1. 实现 `src/services/api/*.api.ts`
 2. 在 `src/services/index.ts` 中切换为 API 实现

@@ -1,0 +1,22 @@
+[Unit]
+Description=Silicon Think Backend
+After=network.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/silliconthink-runtime
+Environment=JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+Environment=SPRING_PROFILES_ACTIVE=prod
+# 敏感配置放在 /etc/silliconthink/application-prod.yml（不进 Git）
+Environment=SPRING_CONFIG_ADDITIONAL_LOCATION=file:/etc/silliconthink/
+ExecStart=/usr/lib/jvm/java-17-openjdk-amd64/bin/java -Xms256m -Xmx512m -jar /opt/silliconthink-runtime/app.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

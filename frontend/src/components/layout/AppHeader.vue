@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { Menu, X } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
+const router = useRouter()
 const menuOpen = ref(false)
+const { user, isLoggedIn, logout, bootstrap } = useAuth()
+
+onMounted(() => {
+  void bootstrap()
+})
 
 const links = [
   { to: '/', label: '首页' },
@@ -21,6 +28,14 @@ function isActive(path: string) {
 
 function closeMenu() {
   menuOpen.value = false
+}
+
+async function onLogout() {
+  await logout()
+  closeMenu()
+  if (route.path.startsWith('/login') || route.path.startsWith('/register')) {
+    await router.push('/')
+  }
 }
 </script>
 
@@ -62,6 +77,16 @@ function closeMenu() {
             aria-label="搜索文章"
           />
         </form>
+
+        <template v-if="isLoggedIn">
+          <span class="header__user">{{ user?.displayName || user?.username }}</span>
+          <BaseButton size="sm" variant="secondary" type="button" @click="onLogout">
+            登出
+          </BaseButton>
+        </template>
+        <RouterLink v-else to="/login" @click="closeMenu">
+          <BaseButton size="sm" variant="secondary">登录</BaseButton>
+        </RouterLink>
 
         <RouterLink to="/projects" @click="closeMenu">
           <BaseButton size="sm">看项目</BaseButton>
@@ -137,6 +162,12 @@ function closeMenu() {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
+}
+
+.header__user {
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
