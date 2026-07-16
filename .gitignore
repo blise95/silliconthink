@@ -2,11 +2,16 @@
 node_modules/
 dist/
 dist-ssr/
+backend/target/
+.tools/
 
 # Environment
 .env
 .env.local
 .env.*.local
+application-local.yml
+backend.env
+
 
 # Logs
 *.log

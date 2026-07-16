@@ -27,6 +27,8 @@ app:
       redirect-uri: ${GITHUB_REDIRECT_URI:https://siliconthink.top/api/v1/auth/oauth/github/callback}
 
 logging:
+  file:
+    path: ${LOG_PATH:/var/log/silliconthink}
   level:
     com.silliconthink: INFO
     root: WARN

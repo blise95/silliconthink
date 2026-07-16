@@ -45,5 +45,9 @@ app:
       user-api-url: https://api.github.com/user
 
 logging:
+  file:
+    # 本地默认项目下 logs/；生产用环境变量 LOG_PATH=/var/log/silliconthink
+    path: ${LOG_PATH:logs}
   level:
     com.silliconthink: INFO
+    root: INFO

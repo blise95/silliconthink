@@ -14,6 +14,9 @@ Environment=SPRING_CONFIG_ADDITIONAL_LOCATION=file:/etc/silliconthink/
 # 数据库名、密码、JWT 等放这里（不要提交到 Git）
 EnvironmentFile=-/etc/silliconthink/backend.env
 ExecStart=/usr/lib/jvm/java-17-openjdk-amd64/bin/java -Xms256m -Xmx512m -jar /opt/silliconthink-runtime/app.jar
+# 日志只走文件 /var/log/silliconthink/backend.log，不写入 journal
+StandardOutput=null
+StandardError=null
 SuccessExitStatus=143
 Restart=on-failure
 RestartSec=5

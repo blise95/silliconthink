@@ -7,6 +7,7 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-/opt/silliconthink}"
 BACKEND_DIR="$APP_DIR/backend"
 JAR_DIR="${JAR_DIR:-/opt/silliconthink-runtime}"
+LOG_DIR="${LOG_DIR:-/var/log/silliconthink}"
 SERVICE_NAME="${SERVICE_NAME:-silliconthink-backend}"
 JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
 
@@ -57,7 +58,9 @@ if [[ -z "$JAR_SRC" || ! -f "$JAR_SRC" ]]; then
   exit 1
 fi
 
-mkdir -p "$JAR_DIR"
+mkdir -p "$JAR_DIR" "$LOG_DIR"
+chown www-data:www-data "$LOG_DIR"
+chmod 755 "$LOG_DIR"
 cp -f "$JAR_SRC" "$JAR_DIR/app.jar"
 chown www-data:www-data "$JAR_DIR/app.jar"
 chmod 644 "$JAR_DIR/app.jar"
@@ -67,3 +70,4 @@ systemctl restart "$SERVICE_NAME"
 systemctl --no-pager --full status "$SERVICE_NAME" | head -20
 
 echo "后端已发布。健康检查: curl -s http://127.0.0.1:8080/api/v1/health"
+echo "日志文件: $LOG_DIR/backend.log"

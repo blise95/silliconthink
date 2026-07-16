@@ -75,8 +75,20 @@ sudo systemctl restart silliconthink-backend
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-生产配置在 **`/etc/silliconthink/application-prod.yml`** + **`/etc/silliconthink/backend.env`**（库名/密码/JWT 用环境变量，不进 Git），jar 在 `/opt/silliconthink-runtime/app.jar`，进程由 systemd 托管。
+生产配置在 **`/etc/silliconthink/application-prod.yml`** + **`/etc/silliconthink/backend.env`**（库名/密码/JWT/日志路径用环境变量，不进 Git），jar 在 `/opt/silliconthink-runtime/app.jar`，进程由 systemd 托管。
 
+### 日志
+
+生产**只写文件**，不写 journal。
+
+| 环境 | 路径 |
+|------|------|
+| 生产 | `/var/log/silliconthink/backend.log`（`LOG_PATH` 可改） |
+| 本地 | `backend/logs/backend.log`（同时打控制台） |
+
+```bash
+sudo tail -f /var/log/silliconthink/backend.log
+```
 GitHub OAuth 回调请改为线上地址，例如：
 
 `https://siliconthink.top/api/v1/auth/oauth/github/callback`
