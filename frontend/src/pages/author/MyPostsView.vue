@@ -31,7 +31,7 @@ async function load() {
 }
 
 /** 发布 / 取消发布 / 删除 共用：捕获错误并刷新列表 */
-async function runAction(action: () => Promise<void>, fallback: string) {
+async function runAction(action: () => Promise<unknown>, fallback: string) {
   if (acting.value) return
   acting.value = true
   error.value = ''
