@@ -79,6 +79,17 @@ async function onLogout() {
         </form>
 
         <template v-if="isLoggedIn">
+          <RouterLink
+            to="/author/posts"
+            class="header__link"
+            :class="{ 'header__link--active': isActive('/author') }"
+            @click="closeMenu"
+          >
+            我的文章
+          </RouterLink>
+          <RouterLink to="/author/posts/new" @click="closeMenu">
+            <BaseButton size="sm">写文章</BaseButton>
+          </RouterLink>
           <span class="header__user">{{ user?.displayName || user?.username }}</span>
           <BaseButton size="sm" variant="secondary" type="button" @click="onLogout">
             登出
@@ -88,7 +99,7 @@ async function onLogout() {
           <BaseButton size="sm" variant="secondary">登录</BaseButton>
         </RouterLink>
 
-        <RouterLink to="/projects" @click="closeMenu">
+        <RouterLink v-if="!isLoggedIn" to="/projects" @click="closeMenu">
           <BaseButton size="sm">看项目</BaseButton>
         </RouterLink>
       </nav>
@@ -102,9 +113,9 @@ async function onLogout() {
   top: 0;
   z-index: 100;
   height: var(--header-height);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--color-border);
+  background: rgba(245, 245, 247, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-line);
 }
 
 .header__inner {
@@ -124,13 +135,30 @@ async function onLogout() {
 .header__logo-mark {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-md);
-  background: var(--color-brand);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-ink);
   color: #fff;
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  position: relative;
+}
+
+.header__logo-mark::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  background: var(--color-cinnabar);
+}
+
+.header__logo-text {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
 }
 
 .header__toggle {
@@ -147,25 +175,25 @@ async function onLogout() {
 }
 
 .header__link {
-  color: var(--color-text-muted);
+  color: var(--color-mist);
   font-weight: 500;
 }
 
 .header__link--active,
 .header__link:hover {
-  color: var(--color-brand-ink);
+  color: var(--color-ink);
 }
 
 .header__search input {
   width: 160px;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   background: var(--color-surface);
 }
 
 .header__user {
-  color: var(--color-text);
+  color: var(--color-ink-soft);
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -184,7 +212,7 @@ async function onLogout() {
     align-items: stretch;
     padding: var(--spacing-lg);
     background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-line);
     display: none;
   }
 

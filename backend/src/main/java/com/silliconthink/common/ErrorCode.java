@@ -23,6 +23,11 @@ public enum ErrorCode {
     OAUTH_EXCHANGE_INVALID(40111, "invalid or expired oauth code"),
     OAUTH_PROVIDER_ERROR(50201, "oauth provider error"),
     OAUTH_NOT_CONFIGURED(50301, "oauth is not configured"),
+    SLUG_EXISTS(40902, "slug already exists"),
+    INVALID_SLUG(40003, "slug is invalid"),
+    PUBLISH_INCOMPLETE(40004, "title, slug and content are required to publish"),
+    INVALID_IMAGE(40005, "invalid image file"),
+    IMAGE_TOO_LARGE(40006, "image exceeds size limit"),
     INTERNAL_ERROR(50000, "internal server error");
 
     private final int code;

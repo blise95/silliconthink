@@ -106,27 +106,30 @@ onMounted(async () => {
 
 <style scoped>
 .hero {
-  background: linear-gradient(180deg, var(--color-surface-muted) 0%, var(--color-surface) 100%);
+  background: transparent;
+  padding-top: calc(var(--spacing-section) + 0.5rem);
 }
 
 .hero__eyebrow {
-  color: var(--color-brand-ink);
+  color: var(--color-cinnabar);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.875rem;
+  letter-spacing: 0.12em;
+  font-size: 0.8125rem;
+  font-family: var(--font-body);
 }
 
 .hero__title {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 3rem);
-  line-height: 1.15;
-  max-width: 16ch;
+  font-size: clamp(2.1rem, 5vw, 3.2rem);
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  max-width: 14ch;
   margin-inline: auto;
+  color: var(--color-ink);
 }
 
 .hero__desc {
-  max-width: 42ch;
+  max-width: 36ch;
   margin-inline: auto;
 }
 

@@ -84,7 +84,7 @@ export interface PostRepository {
 
 \`\`\`css
 :root {
-  --color-brand: #6366f1;
+  --color-cinnabar: #b83b2d;
   --spacing-lg: 24px;
 }
 \`\`\`

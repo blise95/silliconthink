@@ -30,7 +30,8 @@ export function renderMarkdown(content: string): string {
   return md.render(content)
 }
 
-export function formatDate(iso: string): string {
+export function formatDate(iso: string | null | undefined): string {
+  if (!iso) return ''
   return new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',
     month: 'long',

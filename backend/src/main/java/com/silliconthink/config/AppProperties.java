@@ -13,6 +13,7 @@ public class AppProperties {
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
     private OAuth oauth = new OAuth();
+    private Upload upload = new Upload();
 
     @Data
     public static class Jwt {
@@ -39,5 +40,14 @@ public class AppProperties {
         private String authorizeUrl = "https://github.com/login/oauth/authorize";
         private String tokenUrl = "https://github.com/login/oauth/access_token";
         private String userApiUrl = "https://api.github.com/user";
+    }
+
+    @Data
+    public static class Upload {
+        /** Local directory for uploaded images */
+        private String dir = "uploads";
+        /** URL path prefix served publicly, e.g. /uploads */
+        private String publicPathPrefix = "/uploads";
+        private long maxBytes = 5 * 1024 * 1024L;
     }
 }

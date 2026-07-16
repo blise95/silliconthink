@@ -96,13 +96,13 @@ async function onSubmit() {
 
 .auth__field input {
   padding: 0.75rem 0.9rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   background: var(--color-surface);
 }
 
 .auth__error {
-  color: #b91c1c;
+  color: var(--color-cinnabar);
   margin: 0;
 }
 

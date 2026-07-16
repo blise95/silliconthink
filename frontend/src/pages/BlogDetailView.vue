@@ -11,7 +11,7 @@ import { formatDate, tagLabel } from '@/utils/markdown'
 
 const route = useRoute()
 const slug = computed(() => route.params.slug as string)
-const { post, loading } = usePost(slug)
+const { post, loading, error } = usePost(slug)
 
 usePageMeta({
   title: computed(() => post.value?.title),
@@ -24,12 +24,18 @@ usePageMeta({
   <section class="section">
     <PageContainer>
       <LoadingState v-if="loading" />
+      <p v-else-if="error" class="text-muted">{{ error }}</p>
       <NotFoundView v-else-if="!post" />
       <article v-else class="article">
         <header class="article__header">
           <h1 class="article__title">{{ post.title }}</h1>
           <div class="article__meta">
-            <time :datetime="post.publishedAt">{{ formatDate(post.publishedAt) }}</time>
+            <time v-if="post.publishedAt" :datetime="post.publishedAt">
+              {{ formatDate(post.publishedAt) }}
+            </time>
+            <span v-if="post.authorDisplayName" class="article__author">
+              {{ post.authorDisplayName }}
+            </span>
             <span v-for="tag in post.tags" :key="tag" class="tag">{{ tagLabel(tag) }}</span>
           </div>
         </header>

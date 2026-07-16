@@ -4,6 +4,7 @@ import com.silliconthink.common.ErrorCode;
 import com.silliconthink.common.Result;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -49,6 +50,21 @@ public class GlobalExceptionHandler {
                 .body(Result.fail(ErrorCode.FORBIDDEN));
     }
 
+    /** 并发下唯一键冲突时按索引名映射可读业务错误 */
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<Result<Void>> handleDuplicateKey(DuplicateKeyException ex) {
+        String msg = ex.getMostSpecificCause() != null
+                ? String.valueOf(ex.getMostSpecificCause().getMessage()).toLowerCase()
+                : "";
+        ErrorCode code = ErrorCode.CONFLICT;
+        if (msg.contains("uk_blog_post_slug")) {
+            code = ErrorCode.SLUG_EXISTS;
+        } else if (msg.contains("uk_sys_user_username")) {
+            code = ErrorCode.USERNAME_EXISTS;
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.fail(code));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Result<Void>> handleOther(Exception ex) {
         log.error("Unhandled exception", ex);
@@ -71,7 +87,9 @@ public class GlobalExceptionHandler {
         if (code == ErrorCode.NOT_FOUND.getCode()) {
             return HttpStatus.NOT_FOUND;
         }
-        if (code == ErrorCode.CONFLICT.getCode() || code == ErrorCode.USERNAME_EXISTS.getCode()) {
+        if (code == ErrorCode.CONFLICT.getCode()
+                || code == ErrorCode.USERNAME_EXISTS.getCode()
+                || code == ErrorCode.SLUG_EXISTS.getCode()) {
             return HttpStatus.CONFLICT;
         }
         if (code == ErrorCode.OAUTH_NOT_CONFIGURED.getCode()) {

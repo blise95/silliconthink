@@ -14,6 +14,10 @@ spring:
   jackson:
     default-property-inclusion: non_null
     time-zone: Asia/Shanghai
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
 mybatis-plus:
   configuration:
@@ -43,6 +47,10 @@ app:
       authorize-url: https://github.com/login/oauth/authorize
       token-url: https://github.com/login/oauth/access_token
       user-api-url: https://api.github.com/user
+  upload:
+    dir: ${UPLOAD_DIR:uploads}
+    public-path-prefix: /uploads
+    max-bytes: 5242880
 
 logging:
   file:

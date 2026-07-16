@@ -1,41 +1,54 @@
 .article {
-  max-width: 760px;
+  max-width: 720px;
   margin-inline: auto;
 }
 
 .article__header {
   margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-line);
 }
 
 .article__title {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 4vw, 2.5rem);
-  line-height: 1.2;
+  font-size: clamp(1.85rem, 4vw, 2.6rem);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   margin-bottom: var(--spacing-md);
 }
 
 .article__meta {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--spacing-md);
-  color: var(--color-text-muted);
+  color: var(--color-mist);
   font-size: 0.9375rem;
+}
+
+.article__author {
+  color: var(--color-ink-soft);
+  font-weight: 500;
 }
 
 .markdown-body {
   font-size: 1.0625rem;
-  line-height: 1.75;
+  line-height: 1.85;
+  color: var(--color-ink-soft);
 }
 
 .markdown-body h2,
 .markdown-body h3 {
   font-family: var(--font-display);
-  margin-top: 2rem;
+  color: var(--color-ink);
+  margin-top: 2.25rem;
   margin-bottom: 0.75rem;
+  letter-spacing: 0.02em;
 }
 
 .markdown-body p {
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
 }
 
 .markdown-body ul,
@@ -46,10 +59,11 @@
 
 .markdown-body pre {
   margin: 1.5rem 0;
-  padding: 1rem;
+  padding: 1rem 1.15rem;
   border-radius: var(--radius-md);
   overflow-x: auto;
-  background: #1e1e2e;
+  background: #1c1c1c;
+  border: 1px solid #2a2a2a;
 }
 
 .markdown-body code {
@@ -58,19 +72,26 @@
 }
 
 .markdown-body :not(pre) > code {
-  padding: 0.15rem 0.4rem;
+  padding: 0.12rem 0.35rem;
   border-radius: var(--radius-sm);
-  background: var(--color-surface-muted);
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
 }
 
 .markdown-body blockquote {
   margin: 1.5rem 0;
   padding-left: 1rem;
-  border-left: 4px solid var(--color-brand);
-  color: var(--color-text-muted);
+  border-left: 2px solid var(--color-cinnabar);
+  color: var(--color-mist);
 }
 
 .markdown-body a {
-  color: var(--color-brand-ink);
+  color: var(--color-cinnabar-ink);
   text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.markdown-body img {
+  margin: 1.5rem 0;
+  border-radius: var(--radius-md);
 }

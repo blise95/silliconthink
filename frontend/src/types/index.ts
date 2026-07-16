@@ -40,6 +40,30 @@ export interface Post {
   tags: string[]
   publishedAt: string
   status: PublishStatus
+  authorId?: string
+  authorDisplayName?: string
+}
+
+export interface PostWritePayload {
+  title: string
+  slug: string
+  summary?: string
+  contentMd: string
+  coverUrl?: string
+  tags?: string[]
+}
+
+export interface PostListParams {
+  page?: number
+  pageSize?: number
+  tag?: string
+  keyword?: string
+}
+
+export interface MyPostListParams {
+  page?: number
+  pageSize?: number
+  status?: PublishStatus | ''
 }
 
 export interface Project {
@@ -56,13 +80,6 @@ export interface Project {
   featured: boolean
   sortOrder: number
   status: PublishStatus
-}
-
-export interface PostListParams {
-  page?: number
-  pageSize?: number
-  tag?: string
-  keyword?: string
 }
 
 export interface ProjectListParams {

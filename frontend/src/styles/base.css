@@ -13,9 +13,11 @@ html {
 
 body {
   font-family: var(--font-body);
-  color: var(--color-text);
-  background: var(--color-surface);
-  line-height: 1.6;
+  color: var(--color-ink);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(184, 59, 45, 0.04), transparent 55%),
+    var(--color-paper);
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -30,7 +32,8 @@ img {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -44,7 +47,7 @@ input {
 }
 
 .text-muted {
-  color: var(--color-text-muted);
+  color: var(--color-mist);
 }
 
 .mt-lg {
@@ -69,7 +72,7 @@ input {
 
 .animate-on-scroll {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(12px);
   transition:
     opacity var(--transition-normal),
     transform var(--transition-normal);
