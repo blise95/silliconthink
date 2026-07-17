@@ -40,10 +40,22 @@ class BlogPostServiceContentLoadTest {
     }
 
     @Test
-    void loadContentMissingObjectThrows() {
+    void loadContentFallsBackWhenObjectMissingButLegacyPresent() {
+        BlogPostService service = new BlogPostService(null, null, null, blogObjectStore);
+        BlogPostDO post = new BlogPostDO();
+        post.setId(9L);
+        post.setContentKey("posts/1/9.md");
+        post.setContentMd("# recovered");
+        when(blogObjectStore.getString("posts/1/9.md")).thenReturn(Optional.empty());
+        assertEquals("# recovered", service.loadContent(post));
+    }
+
+    @Test
+    void loadContentMissingObjectAndLegacyThrows() {
         BlogPostService service = new BlogPostService(null, null, null, blogObjectStore);
         BlogPostDO post = new BlogPostDO();
         post.setContentKey("posts/1/9.md");
+        post.setContentMd("");
         when(blogObjectStore.getString("posts/1/9.md")).thenReturn(Optional.empty());
         BizException ex = assertThrows(BizException.class, () -> service.loadContent(post));
         assertEquals(ErrorCode.CONTENT_OBJECT_MISSING.getCode(), ex.getCode());

@@ -18,6 +18,7 @@ const postId = computed(() => (isNew.value ? '' : String(route.params.id)))
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
+const success = ref('')
 const status = ref<PublishStatus>('draft')
 
 const form = reactive({
@@ -53,6 +54,22 @@ function resetForm() {
   slugTouched = false
   error.value = ''
   loadedKey = ''
+}
+
+const ERROR_HINTS: Record<number, string> = {
+  50302: '媒体存储不可用，请检查服务器 BLOG_STORAGE_ROOT 目录权限',
+  40401: '正文文件缺失，请重新保存文章',
+  40003: 'Slug 格式无效（仅小写字母、数字、连字符）',
+  40902: 'Slug 已被占用，请换一个',
+}
+
+function formatApiError(e: unknown, fallback: string): string {
+  if (e && typeof e === 'object' && 'code' in e && 'message' in e) {
+    const code = Number((e as { code: number }).code)
+    const message = String((e as { message: string }).message || '')
+    return ERROR_HINTS[code] || message || fallback
+  }
+  return e instanceof Error ? e.message : fallback
 }
 
 function onTitleInput() {
@@ -108,7 +125,7 @@ async function load() {
     slugTouched = true
     loadedKey = key
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '加载失败'
+    error.value = formatApiError(e, '加载失败')
   } finally {
     loading.value = false
   }
@@ -118,6 +135,7 @@ async function saveDraft() {
   if (saving.value) return
   saving.value = true
   error.value = ''
+  success.value = ''
   try {
     if (isNew.value) {
       const created = await postRepo.create(payload())
@@ -129,8 +147,9 @@ async function saveDraft() {
       const updated = await postRepo.update(postId.value, payload())
       status.value = updated.status
     }
+    success.value = '草稿已保存'
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '保存失败'
+    error.value = formatApiError(e, '保存失败')
   } finally {
     saving.value = false
   }
@@ -140,6 +159,7 @@ async function publish() {
   if (saving.value) return
   saving.value = true
   error.value = ''
+  success.value = ''
   try {
     if (isNew.value) {
       const created = await postRepo.create(payload())
@@ -153,8 +173,9 @@ async function publish() {
       const published = await postRepo.publish(postId.value)
       status.value = published.status
     }
+    success.value = '已发布'
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '发布失败'
+    error.value = formatApiError(e, '发布失败')
   } finally {
     saving.value = false
   }
@@ -164,11 +185,13 @@ async function unpublish() {
   if (isNew.value || saving.value) return
   saving.value = true
   error.value = ''
+  success.value = ''
   try {
     const result = await postRepo.unpublish(postId.value)
     status.value = result.status
+    success.value = '已取消发布'
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '取消发布失败'
+    error.value = formatApiError(e, '取消发布失败')
   } finally {
     saving.value = false
   }
@@ -193,6 +216,7 @@ watch(routeKey, () => {
       </div>
 
       <p v-if="error" class="editor-error">{{ error }}</p>
+      <p v-else-if="success" class="editor-success">{{ success }}</p>
       <LoadingState v-if="loading" />
 
       <form v-else class="editor-form" @submit.prevent>
@@ -277,6 +301,11 @@ watch(routeKey, () => {
 
 .editor-error {
   color: var(--color-cinnabar, #b83b2d);
+  margin-bottom: var(--spacing-md);
+}
+
+.editor-success {
+  color: var(--color-ink-soft, #3d3d3d);
   margin-bottom: var(--spacing-md);
 }
 

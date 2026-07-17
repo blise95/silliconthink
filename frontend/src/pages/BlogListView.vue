@@ -19,7 +19,7 @@ const params = computed(() => ({
   tag: typeof route.query.tag === 'string' ? route.query.tag : undefined,
 }))
 
-const { data, loading } = usePosts(params)
+const { data, loading, error } = usePosts(params)
 const totalPages = computed(() =>
   data.value ? Math.max(1, Math.ceil(data.value.total / data.value.pageSize)) : 1,
 )
@@ -55,6 +55,10 @@ usePageMeta({
       </div>
 
       <LoadingState v-if="loading" />
+      <EmptyState
+        v-else-if="error"
+        :message="`加载失败：${error}`"
+      />
       <EmptyState v-else-if="!data?.list.length" message="没有找到文章" />
       <div v-else class="grid-2">
         <PostCard v-for="post in data.list" :key="post.id" :post="post" />

@@ -93,7 +93,7 @@ public class BlogPostService {
         post.setTitle(request.getTitle().trim());
         post.setSlug(normalizeSlug(request.getSlug()));
         post.setSummary(nullToEmpty(request.getSummary()));
-        post.setContentMd("");
+        post.setContentMd(nullToEmpty(request.getContentMd()));
         post.setCoverUrl(blankToNull(request.getCoverUrl()));
         post.setStatus(STATUS_DRAFT);
         post.setPublishedAt(null);
@@ -101,8 +101,14 @@ public class BlogPostService {
 
         String key = BlogObjectKeys.postContent(authorId, post.getId());
         try {
-            blogObjectStore.putString(key, nullToEmpty(request.getContentMd()));
+            if (!blogObjectStore.isRootWritable()) {
+                throw new BizException(ErrorCode.MEDIA_STORAGE_UNAVAILABLE);
+            }
+            String body = nullToEmpty(request.getContentMd());
+            blogObjectStore.putString(key, body);
             post.setContentKey(key);
+            // Keep content_md as fallback until object store is fully trusted in prod
+            post.setContentMd(body);
             blogPostMapper.updateById(post);
         } catch (RuntimeException e) {
             blogPostMapper.deleteById(post.getId());
@@ -124,12 +130,16 @@ public class BlogPostService {
         post.setSummary(nullToEmpty(request.getSummary()));
         post.setCoverUrl(blankToNull(request.getCoverUrl()));
 
+        if (!blogObjectStore.isRootWritable()) {
+            throw new BizException(ErrorCode.MEDIA_STORAGE_UNAVAILABLE);
+        }
         String key = StringUtils.hasText(post.getContentKey())
                 ? post.getContentKey()
                 : BlogObjectKeys.postContent(authorId, postId);
-        blogObjectStore.putString(key, nullToEmpty(request.getContentMd()));
+        String body = nullToEmpty(request.getContentMd());
+        blogObjectStore.putString(key, body);
         post.setContentKey(key);
-        post.setContentMd("");
+        post.setContentMd(body);
         blogPostMapper.updateById(post);
         blogTagService.replacePostTags(postId, request.getTags());
         return getMine(authorId, postId);
@@ -270,12 +280,21 @@ public class BlogPostService {
     }
 
     /**
-     * Prefer object store; fall back to legacy content_md during migration.
+     * Prefer object store; fall back to legacy content_md when the object is missing
+     * (e.g. storage root moved) so published posts do not hard-404.
      */
     String loadContent(BlogPostDO post) {
         if (StringUtils.hasText(post.getContentKey())) {
-            return blogObjectStore.getString(post.getContentKey())
-                    .orElseThrow(() -> new BizException(ErrorCode.CONTENT_OBJECT_MISSING));
+            var fromStore = blogObjectStore.getString(post.getContentKey());
+            if (fromStore.isPresent()) {
+                return fromStore.get();
+            }
+            if (StringUtils.hasText(post.getContentMd())) {
+                log.warn("Content object missing for key={}, falling back to content_md (postId={})",
+                        post.getContentKey(), post.getId());
+                return post.getContentMd();
+            }
+            throw new BizException(ErrorCode.CONTENT_OBJECT_MISSING);
         }
         if (StringUtils.hasText(post.getContentMd())) {
             return post.getContentMd();

@@ -48,8 +48,8 @@ export const apiPostRepository: PostRepository = {
     try {
       return await apiRequest<Post>(`/api/v1/posts/by-slug/${encodeURIComponent(slug)}`)
     } catch (e) {
-      // 仅 404 视为不存在；其它错误向上抛，交给页面展示错误态
-      if (e instanceof ApiError && (e.status === 404 || e.code === 40400)) {
+      // 仅业务「未找到」(40400) 视为不存在；正文对象缺失等其它错误要抛给页面
+      if (e instanceof ApiError && e.code === 40400) {
         return null
       }
       throw e

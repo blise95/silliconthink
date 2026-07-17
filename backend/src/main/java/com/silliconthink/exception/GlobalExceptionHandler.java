@@ -84,9 +84,12 @@ public class GlobalExceptionHandler {
         if (code == ErrorCode.FORBIDDEN.getCode()) {
             return HttpStatus.FORBIDDEN;
         }
-        if (code == ErrorCode.NOT_FOUND.getCode()
-                || code == ErrorCode.CONTENT_OBJECT_MISSING.getCode()) {
+        if (code == ErrorCode.NOT_FOUND.getCode()) {
             return HttpStatus.NOT_FOUND;
+        }
+        // Content file missing is a server/data issue, not "slug not found" — avoid SPA treating it as 404 page
+        if (code == ErrorCode.CONTENT_OBJECT_MISSING.getCode()) {
+            return HttpStatus.UNPROCESSABLE_ENTITY;
         }
         if (code == ErrorCode.CONFLICT.getCode()
                 || code == ErrorCode.USERNAME_EXISTS.getCode()
