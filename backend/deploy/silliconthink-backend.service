@@ -1,10 +1,10 @@
 [Unit]
 Description=Silicon Think Backend
-After=network-online.target mysql.service mnt-nas-blog.mount
+After=network-online.target mysql.service
 Wants=network-online.target
-# Ensure NAS/object-store mount exists before starting (see deploy/nas-storage.md).
-# If the mount is not ready yet, temporarily comment out the next line so the service can start.
-RequiresMountsFor=/mnt/nas-blog
+# Optional: only when blog storage is on a NAS mount (see deploy/nas-storage.md)
+# After=network-online.target mysql.service mnt-nas-blog.mount
+# RequiresMountsFor=/mnt/nas-blog
 
 [Service]
 Type=simple
