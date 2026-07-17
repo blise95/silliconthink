@@ -1,0 +1,15 @@
+[Unit]
+Description=Silicon Think blog object storage (NAS via Tailscale)
+Documentation=file:///opt/silliconthink/backend/deploy/nas-storage.md
+After=network-online.target tailscaled.service
+Wants=network-online.target tailscaled.service
+
+[Mount]
+# Replace with your NAS Tailscale address and export path (do not commit real values).
+What=100.x.x.x:/volume1/YOUR_NAS_EXPORT
+Where=/mnt/nas-blog
+Type=nfs
+Options=_netdev,nofail,soft,timeo=50,retrans=2,nfsvers=4
+
+[Install]
+WantedBy=multi-user.target

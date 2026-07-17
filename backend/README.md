@@ -1,8 +1,22 @@
 # Silicon Think — Backend
 
-Java 17 + Spring Boot 3 + MySQL 8 + MyBatis-Plus。统一审计字段：`create_date` / `update_date` / `create_by` / `update_by`。
+Java 17 + Spring Boot 3 + MySQL 8 + MyBatis-Plus. Audit fields: `create_date` / `update_date` / `create_by` / `update_by`.
 
-## 要求
+[根 README（中文）](../README.zh-CN.md) · [Root README (EN)](../README.md)
+
+## Storage model
+
+| Data | Where |
+|------|--------|
+| Post metadata (title, slug, status, tags, `content_key`) | MySQL |
+| Markdown body + uploaded images | Object store root (`BLOG_STORAGE_ROOT`) — local dir or NAS mount |
+
+- [NAS storage (EN)](deploy/nas-storage.md)
+- [NAS 存储（中文）](deploy/nas-storage.zh-CN.md)
+
+Local default: `data/blog-storage`. Existing DBs: run `src/main/resources/db/migration/2026-07-17-add-content-key.sql`, then optionally `BLOG_MIGRATE_CONTENT=true` once.
+
+## Requirements
 
 - JDK 17+
 - Maven 3.9+
@@ -25,10 +39,12 @@ mysql -uroot -p < src/main/resources/db/data.sql
 
 ```bash
 cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
-# 编辑数据源、JWT secret、GitHub OAuth
+# 编辑数据源、JWT secret、GitHub OAuth — 勿提交真实密钥
 ```
 
 `application.yml` 已默认 `spring.profiles.active=local`。
+
+可选：`export BLOG_STORAGE_ROOT=/path/to/store`
 
 ### GitHub OAuth App
 
@@ -60,22 +76,30 @@ mvn spring-boot:run
 
 统一响应：`{ "code": 0, "message": "ok", "data": ... }`（`code=0` 成功）。
 
+## 安全
+
+- 生产密钥只放 `/etc/silliconthink/backend.env`，仓库仅保留 `deploy/backend.env.example`
+- NAS/NFS 仅经 Tailscale；示例 mount 使用占位 IP
+- 详见根 README Security 与 [nas-storage.zh-CN.md](deploy/nas-storage.zh-CN.md)
+
 ## 香草云单节点发布
 
 ### 首次
 
 ```bash
-# 1) 仓库已在 /opt/silliconthink（可用 frontend/deploy/server-setup.sh 先装前端）
+# 1) 仓库已在 /opt/silliconthink
 # 2) MySQL 建库并导入 schema.sql / data.sql
 sudo bash /opt/silliconthink/backend/deploy/server-setup.sh
-sudo vim /etc/silliconthink/backend.env              # 改 DB_NAME / DB_PASSWORD / JWT_SECRET
+sudo vim /etc/silliconthink/backend.env              # 改 DB_* / JWT_SECRET / BLOG_STORAGE_ROOT
 sudo systemctl restart silliconthink-backend
 
-# 3) Nginx 增加 /api/ 反代（见 frontend/deploy/nginx.conf.example）后
+# 3) Nginx 增加 /api/ 与 /uploads/ 反代（见 frontend/deploy/nginx.conf.example）
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-生产配置在 **`/etc/silliconthink/application-prod.yml`** + **`/etc/silliconthink/backend.env`**（库名/密码/JWT/日志路径用环境变量，不进 Git），jar 在 `/opt/silliconthink-runtime/app.jar`，进程由 systemd 托管。
+博客 NAS 挂载步骤：[deploy/nas-storage.zh-CN.md](deploy/nas-storage.zh-CN.md)
+
+生产配置在 **`/etc/silliconthink/application-prod.yml`** + **`/etc/silliconthink/backend.env`**（不进 Git），jar 在 `/opt/silliconthink-runtime/app.jar`。
 
 ### 日志
 
@@ -89,27 +113,11 @@ sudo nginx -t && sudo systemctl reload nginx
 ```bash
 sudo tail -f /var/log/silliconthink/backend.log
 ```
-GitHub OAuth 回调请改为线上地址，例如：
 
-`https://siliconthink.top/api/v1/auth/oauth/github/callback`
-
-前端 `.env.production` 建议：
-
-```env
-VITE_API_BASE_URL=
-VITE_AUTH_USE_API=true
-```
-
-（`VITE_API_BASE_URL` 留空则同源走 Nginx `/api`。）
-
-### 日常一行更新（仅后端）
+### 日常更新
 
 ```bash
 sudo bash /opt/silliconthink/backend/deploy/update.sh
-```
-
-### 前后端一起更新
-
-```bash
+# 或全量
 sudo bash /opt/silliconthink/deploy/update.sh
 ```

@@ -13,6 +13,7 @@ public class AppProperties {
     private Jwt jwt = new Jwt();
     private Cors cors = new Cors();
     private OAuth oauth = new OAuth();
+    private Storage storage = new Storage();
     private Upload upload = new Upload();
 
     @Data
@@ -43,9 +44,23 @@ public class AppProperties {
     }
 
     @Data
+    public static class Storage {
+        /**
+         * Object-store root (local path or NAS mount).
+         * Posts: {root}/posts/... ; media defaults under {root}/media when upload.dir empty.
+         */
+        private String root = "data/blog-storage";
+        /** One-shot: export content_md rows to objects and fill content_key. */
+        private boolean migrateOnStartup = false;
+    }
+
+    @Data
     public static class Upload {
-        /** Local directory for uploaded images */
-        private String dir = "uploads";
+        /**
+         * Media directory. Empty = {storage.root}/media.
+         * Prefer setting only BLOG_STORAGE_ROOT in production.
+         */
+        private String dir = "";
         /** URL path prefix served publicly, e.g. /uploads */
         private String publicPathPrefix = "/uploads";
         private long maxBytes = 5 * 1024 * 1024L;

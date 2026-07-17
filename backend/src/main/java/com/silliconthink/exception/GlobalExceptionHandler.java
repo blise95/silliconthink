@@ -84,7 +84,8 @@ public class GlobalExceptionHandler {
         if (code == ErrorCode.FORBIDDEN.getCode()) {
             return HttpStatus.FORBIDDEN;
         }
-        if (code == ErrorCode.NOT_FOUND.getCode()) {
+        if (code == ErrorCode.NOT_FOUND.getCode()
+                || code == ErrorCode.CONTENT_OBJECT_MISSING.getCode()) {
             return HttpStatus.NOT_FOUND;
         }
         if (code == ErrorCode.CONFLICT.getCode()
@@ -92,7 +93,8 @@ public class GlobalExceptionHandler {
                 || code == ErrorCode.SLUG_EXISTS.getCode()) {
             return HttpStatus.CONFLICT;
         }
-        if (code == ErrorCode.OAUTH_NOT_CONFIGURED.getCode()) {
+        if (code == ErrorCode.OAUTH_NOT_CONFIGURED.getCode()
+                || code == ErrorCode.MEDIA_STORAGE_UNAVAILABLE.getCode()) {
             return HttpStatus.SERVICE_UNAVAILABLE;
         }
         if (code >= 50000) {

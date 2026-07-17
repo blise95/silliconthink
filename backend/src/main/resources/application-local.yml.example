@@ -20,3 +20,5 @@ app:
       client-id: ${GITHUB_CLIENT_ID:}
       client-secret: ${GITHUB_CLIENT_SECRET:}
       redirect-uri: http://localhost:8080/api/v1/auth/oauth/github/callback
+  storage:
+    root: ${BLOG_STORAGE_ROOT:data/blog-storage}

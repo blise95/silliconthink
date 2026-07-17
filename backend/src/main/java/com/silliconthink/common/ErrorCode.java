@@ -28,6 +28,8 @@ public enum ErrorCode {
     PUBLISH_INCOMPLETE(40004, "title, slug and content are required to publish"),
     INVALID_IMAGE(40005, "invalid image file"),
     IMAGE_TOO_LARGE(40006, "image exceeds size limit"),
+    MEDIA_STORAGE_UNAVAILABLE(50302, "media storage unavailable"),
+    CONTENT_OBJECT_MISSING(40401, "blog content object missing"),
     INTERNAL_ERROR(50000, "internal server error");
 
     private final int code;

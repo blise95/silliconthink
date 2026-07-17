@@ -1,73 +1,124 @@
-# silliconthink
+# Silicon Think
 
-个人网站项目 — Vue 3 前端 + Java 后端（登录/注册/OAuth）+ OpenSpec 规格驱动。
+**English** | [简体中文](./README.zh-CN.md)
 
-**仓库：** https://github.com/blise95/silliconthink
+Personal site: public blog & portfolio, authoring studio, JWT / GitHub OAuth — Vue 3 frontend + Spring Boot backend, driven by [OpenSpec](./openspec/).
 
-## 快速开始
+**Repository:** https://github.com/blise95/silliconthink
 
-### 前端
+## Features
+
+- Public blog list / detail (Markdown) and portfolio pages
+- Auth: register, login, GitHub OAuth (JWT)
+- Author workspace: drafts, publish, Markdown editor with image upload
+- **Storage split:** MySQL holds **metadata** (title, slug, status, tags, `content_key`); blog **body & media** live in a configurable object-store root (local directory or NAS mount over Tailscale)
+
+## Architecture
+
+```text
+Browser → Nginx
+           ├─ static Vue SPA
+           ├─ /api/     → Spring Boot
+           └─ /uploads/ → media (proxy or alias)
+                            │
+               Spring Boot ─┼─ MySQL (metadata)
+                            └─ BLOG_STORAGE_ROOT (NAS ≈ OSS via Tailscale)
+                                 posts/*.md + media/*
+```
+
+## Tech stack
+
+| Layer | Stack |
+|-------|--------|
+| Frontend | Vue 3, Vite, TypeScript |
+| Backend | Java 17, Spring Boot 3, MyBatis-Plus, JWT |
+| Data | MySQL 8 (metadata) + filesystem/NAS object store |
+| Specs | OpenSpec under `openspec/` |
+
+## Repository layout
+
+| Path | Description |
+|------|-------------|
+| `frontend/` | Vue 3 site |
+| `backend/` | Spring Boot API |
+| `openspec/` | Specs & change proposals |
+| `deploy/` | Full-stack update scripts |
+
+## Quick start
+
+### Frontend
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env   # 可选
+cp .env.example .env   # optional
 npm run dev
 ```
 
-浏览器打开 http://localhost:5173
+Open http://localhost:5173
 
-### 后端
+### Backend
 
 ```bash
 # JDK 17 + MySQL 8
 mysql -uroot -p < backend/src/main/resources/db/schema.sql
 mysql -uroot -p < backend/src/main/resources/db/data.sql
-cp backend/src/main/resources/application-local.yml.example backend/src/main/resources/application-local.yml
-# 编辑数据源与 JWT / GitHub OAuth
-cd backend
-# 推荐 JAVA_HOME 指向 JDK 17
-mvn spring-boot:run
+cp backend/src/main/resources/application-local.yml.example \
+   backend/src/main/resources/application-local.yml
+# Edit datasource, JWT, OAuth — do not commit secrets
+cd backend && mvn spring-boot:run
 ```
 
-默认管理员：`admin` / `Admin@123456`（**上线前务必修改**）。详情见 [backend/README.md](backend/README.md)。
+Default seed admin: `admin` / `Admin@123456` — **change before production.**
 
-### 认证联调
+Local object store defaults to `data/blog-storage` (`BLOG_STORAGE_ROOT`).
 
-前端 `.env`：
+Auth + content API tips: see [frontend/README.md](frontend/README.md) and [backend/README.md](backend/README.md).
 
-```env
-VITE_USE_MOCK=true
-VITE_AUTH_USE_API=true
-VITE_API_BASE_URL=http://localhost:8080
-```
+## Configuration (sensitive values)
 
-内容仍可用 Mock，登录/注册/GitHub OAuth 走后端。
+| Variable | Purpose | Notes |
+|----------|---------|--------|
+| `DB_*` / `JWT_SECRET` | Database & auth | Server `/etc/silliconthink/backend.env` only |
+| `BLOG_STORAGE_ROOT` | Object-store root | Prod: NAS mount e.g. `/mnt/nas-blog` |
+| `UPLOAD_DIR` | Media dir | Optional; default `{BLOG_STORAGE_ROOT}/media` |
+| `BLOG_MIGRATE_CONTENT` | One-shot body export | Set `true` once, then off |
 
-## 目录
+Examples in repo are **placeholders only**.
 
-| 目录 | 说明 |
-|------|------|
-| `frontend/` | Vue 3 个人站点 |
-| `backend/` | Spring Boot 后端（认证） |
-| `openspec/` | OpenSpec 规格与变更 |
+## Deployment
 
-## 部署（香草云单节点）
-
-代码在服务器 `/opt/silliconthink`，跟踪 GitHub `main`。
-
-**一行发布前后端：**
+Single-node (e.g. VPS) tracks GitHub `main` under `/opt/silliconthink`:
 
 ```bash
 sudo bash /opt/silliconthink/deploy/update.sh
 ```
 
-| 只发前端 | `sudo bash /opt/silliconthink/frontend/deploy/update.sh` |
-| 只发后端 | `sudo bash /opt/silliconthink/backend/deploy/update.sh` |
+| Frontend only | `sudo bash /opt/silliconthink/frontend/deploy/update.sh` |
+| Backend only | `sudo bash /opt/silliconthink/backend/deploy/update.sh` |
 
-- 前端：构建静态文件 → `/var/www/silliconthink`
-- 后端：`mvn package` → `/opt/silliconthink-runtime/app.jar` → `systemctl restart silliconthink-backend`
-- 配置：`/etc/silliconthink/application-prod.yml`（首次用 `backend/deploy/server-setup.sh`）
-- Nginx：静态站点 + `/api/` 反代到 `127.0.0.1:8080`
+**NAS as object storage (recommended for blog body/media):**
 
-详见 [frontend/README.md](frontend/README.md)、[backend/README.md](backend/README.md)。
+- English: [backend/deploy/nas-storage.md](backend/deploy/nas-storage.md)
+- 中文: [backend/deploy/nas-storage.zh-CN.md](backend/deploy/nas-storage.zh-CN.md)
+
+Includes Tailscale mount, systemd, migration, Nginx `/uploads`, and rollback.
+
+## Security
+
+- **Never commit** real `backend.env`, `application-local.yml`, OAuth secrets, SMB `*.cred`, or private Tailscale IPs
+- Keep NAS NFS/SMB reachable **only** via Tailscale — not the public Internet
+- Change the default admin password before going live
+- Prefer `chmod 640` on production env files (`root:www-data`)
+- If secrets leak: rotate JWT, DB password, and OAuth client secret immediately
+
+## Documentation
+
+- [Frontend README](frontend/README.md)
+- [Backend README](backend/README.md)
+- [NAS storage (EN)](backend/deploy/nas-storage.md) / [NAS 存储（中文）](backend/deploy/nas-storage.zh-CN.md)
+- [OpenSpec](openspec/)
+
+## License
+
+Personal project — license TBD. Contributions via GitHub Issues/PRs welcome for docs and fixes.

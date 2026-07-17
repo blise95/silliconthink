@@ -8,11 +8,14 @@ import com.silliconthink.blog.dto.PostUpdateRequest;
 import com.silliconthink.blog.dto.PostVO;
 import com.silliconthink.blog.entity.BlogPostDO;
 import com.silliconthink.blog.mapper.BlogPostMapper;
+import com.silliconthink.blog.storage.BlogObjectKeys;
+import com.silliconthink.blog.storage.BlogObjectStore;
 import com.silliconthink.common.ErrorCode;
 import com.silliconthink.exception.BizException;
 import com.silliconthink.user.entity.UserDO;
 import com.silliconthink.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +28,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BlogPostService {
@@ -37,13 +41,14 @@ public class BlogPostService {
     private final BlogPostMapper blogPostMapper;
     private final BlogTagService blogTagService;
     private final UserService userService;
+    private final BlogObjectStore blogObjectStore;
 
     public PageResult<PostVO> listPublished(int page, int pageSize, String tag, String keyword) {
         LambdaQueryWrapper<BlogPostDO> qw = publishedQuery();
         applyTagFilter(qw, tag);
         applyKeywordFilter(qw, keyword);
         qw.orderByDesc(BlogPostDO::getPublishedAt);
-        return toPage(qw, page, pageSize, true);
+        return toPage(qw, page, pageSize, true, false);
     }
 
     public PostVO getPublishedBySlug(String slug) {
@@ -53,7 +58,7 @@ public class BlogPostService {
         if (post == null) {
             throw new BizException(ErrorCode.NOT_FOUND);
         }
-        return toVo(post, blogTagService.listTagNamesByPostId(post.getId()), true);
+        return toVo(post, blogTagService.listTagNamesByPostId(post.getId()), true, true);
     }
 
     public List<PostVO> listLatestPublished(int count) {
@@ -61,7 +66,7 @@ public class BlogPostService {
         List<BlogPostDO> posts = blogPostMapper.selectList(publishedQuery()
                 .orderByDesc(BlogPostDO::getPublishedAt)
                 .last("LIMIT " + size));
-        return toVoList(posts, true);
+        return toVoList(posts, true, false);
     }
 
     public PageResult<PostVO> listMine(Long authorId, int page, int pageSize, String status) {
@@ -71,12 +76,12 @@ public class BlogPostService {
             qw.eq(BlogPostDO::getStatus, status.trim());
         }
         qw.orderByDesc(BlogPostDO::getUpdateDate);
-        return toPage(qw, page, pageSize, true);
+        return toPage(qw, page, pageSize, true, false);
     }
 
     public PostVO getMine(Long authorId, Long postId) {
         BlogPostDO post = requireOwned(authorId, postId);
-        return toVo(post, blogTagService.listTagNamesByPostId(post.getId()), true);
+        return toVo(post, blogTagService.listTagNamesByPostId(post.getId()), true, true);
     }
 
     @Transactional
@@ -88,11 +93,22 @@ public class BlogPostService {
         post.setTitle(request.getTitle().trim());
         post.setSlug(normalizeSlug(request.getSlug()));
         post.setSummary(nullToEmpty(request.getSummary()));
-        post.setContentMd(nullToEmpty(request.getContentMd()));
+        post.setContentMd("");
         post.setCoverUrl(blankToNull(request.getCoverUrl()));
         post.setStatus(STATUS_DRAFT);
         post.setPublishedAt(null);
         blogPostMapper.insert(post);
+
+        String key = BlogObjectKeys.postContent(authorId, post.getId());
+        try {
+            blogObjectStore.putString(key, nullToEmpty(request.getContentMd()));
+            post.setContentKey(key);
+            blogPostMapper.updateById(post);
+        } catch (RuntimeException e) {
+            blogPostMapper.deleteById(post.getId());
+            throw e;
+        }
+
         blogTagService.replacePostTags(post.getId(), request.getTags());
         return getMine(authorId, post.getId());
     }
@@ -106,8 +122,14 @@ public class BlogPostService {
         post.setTitle(request.getTitle().trim());
         post.setSlug(slug);
         post.setSummary(nullToEmpty(request.getSummary()));
-        post.setContentMd(nullToEmpty(request.getContentMd()));
         post.setCoverUrl(blankToNull(request.getCoverUrl()));
+
+        String key = StringUtils.hasText(post.getContentKey())
+                ? post.getContentKey()
+                : BlogObjectKeys.postContent(authorId, postId);
+        blogObjectStore.putString(key, nullToEmpty(request.getContentMd()));
+        post.setContentKey(key);
+        post.setContentMd("");
         blogPostMapper.updateById(post);
         blogTagService.replacePostTags(postId, request.getTags());
         return getMine(authorId, postId);
@@ -116,9 +138,10 @@ public class BlogPostService {
     @Transactional
     public PostVO publish(Long authorId, Long postId) {
         BlogPostDO post = requireOwned(authorId, postId);
+        String body = loadContent(post);
         if (!StringUtils.hasText(post.getTitle())
                 || !StringUtils.hasText(post.getSlug())
-                || !StringUtils.hasText(post.getContentMd())) {
+                || !StringUtils.hasText(body)) {
             throw new BizException(ErrorCode.PUBLISH_INCOMPLETE);
         }
         post.setStatus(STATUS_PUBLISHED);
@@ -140,7 +163,7 @@ public class BlogPostService {
     @Transactional
     public void softDelete(Long authorId, Long postId) {
         BlogPostDO post = requireOwned(authorId, postId);
-        // 软删除前释放 slug，否则 uk_blog_post_slug 仍占用，无法复用
+        // Soft-delete keeps object for recovery; slug released for reuse
         post.setSlug(releaseSlug(post.getSlug(), post.getId()));
         post.setStatus(STATUS_DRAFT);
         blogPostMapper.updateById(post);
@@ -183,19 +206,20 @@ public class BlogPostService {
         qw.and(w -> w.like(BlogPostDO::getTitle, kw).or().like(BlogPostDO::getSummary, kw));
     }
 
-    private PageResult<PostVO> toPage(LambdaQueryWrapper<BlogPostDO> qw, int page, int pageSize, boolean withAuthor) {
+    private PageResult<PostVO> toPage(
+            LambdaQueryWrapper<BlogPostDO> qw, int page, int pageSize, boolean withAuthor, boolean withContent) {
         int p = Math.max(page, 1);
         int size = Math.min(Math.max(pageSize, 1), 50);
         Page<BlogPostDO> result = blogPostMapper.selectPage(new Page<>(p, size), qw);
         return PageResult.<PostVO>builder()
-                .list(toVoList(result.getRecords(), withAuthor))
+                .list(toVoList(result.getRecords(), withAuthor, withContent))
                 .total(result.getTotal())
                 .page(p)
                 .pageSize(size)
                 .build();
     }
 
-    private List<PostVO> toVoList(List<BlogPostDO> posts, boolean withAuthor) {
+    private List<PostVO> toVoList(List<BlogPostDO> posts, boolean withAuthor, boolean withContent) {
         if (posts.isEmpty()) {
             return List.of();
         }
@@ -211,11 +235,11 @@ public class BlogPostService {
         }
         Map<Long, String> finalNames = displayNames;
         return posts.stream()
-                .map(post -> toVo(post, tags.getOrDefault(post.getId(), List.of()), finalNames.get(post.getAuthorId())))
+                .map(post -> toVo(post, tags.getOrDefault(post.getId(), List.of()), finalNames.get(post.getAuthorId()), withContent))
                 .toList();
     }
 
-    private PostVO toVo(BlogPostDO post, List<String> tags, boolean withAuthor) {
+    private PostVO toVo(BlogPostDO post, List<String> tags, boolean withAuthor, boolean withContent) {
         String displayName = null;
         if (withAuthor) {
             UserDO user = userService.findById(post.getAuthorId());
@@ -223,22 +247,40 @@ public class BlogPostService {
                 displayName = user.getDisplayName();
             }
         }
-        return toVo(post, tags, displayName);
+        return toVo(post, tags, displayName, withContent);
     }
 
-    private PostVO toVo(BlogPostDO post, List<String> tags, String authorDisplayName) {
+    private PostVO toVo(BlogPostDO post, List<String> tags, String authorDisplayName, boolean withContent) {
+        String contentMd = null;
+        if (withContent) {
+            contentMd = loadContent(post);
+        }
         return PostVO.builder()
                 .id(String.valueOf(post.getId()))
                 .title(post.getTitle())
                 .slug(post.getSlug())
                 .summary(post.getSummary())
-                .contentMd(post.getContentMd())
+                .contentMd(contentMd)
                 .coverUrl(post.getCoverUrl())
                 .tags(tags)
                 .publishedAt(post.getPublishedAt())
                 .status(post.getStatus())
                 .authorDisplayName(authorDisplayName)
                 .build();
+    }
+
+    /**
+     * Prefer object store; fall back to legacy content_md during migration.
+     */
+    String loadContent(BlogPostDO post) {
+        if (StringUtils.hasText(post.getContentKey())) {
+            return blogObjectStore.getString(post.getContentKey())
+                    .orElseThrow(() -> new BizException(ErrorCode.CONTENT_OBJECT_MISSING));
+        }
+        if (StringUtils.hasText(post.getContentMd())) {
+            return post.getContentMd();
+        }
+        return "";
     }
 
     private void validateSlug(String slug) {
@@ -258,11 +300,9 @@ public class BlogPostService {
         if (blogPostMapper.selectCount(active) > 0) {
             throw new BizException(ErrorCode.SLUG_EXISTS);
         }
-        // 活跃行未占用时，清理软删行上残留的同名 slug（历史数据 / 并发兜底）
         blogPostMapper.releaseDeletedSlug(normalized, excludeId);
     }
 
-    /** 软删除后改写 slug，腾出唯一索引给新文章复用 */
     private static String releaseSlug(String slug, Long id) {
         String suffix = "__del_" + id;
         String base = StringUtils.hasText(slug) ? slug : "post";

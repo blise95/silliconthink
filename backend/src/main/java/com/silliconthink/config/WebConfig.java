@@ -11,7 +11,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @Configuration
@@ -19,6 +18,7 @@ import java.util.List;
 public class WebConfig implements WebMvcConfigurer {
 
     private final AppProperties appProperties;
+    private final BlogStoragePaths blogStoragePaths;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -48,7 +48,7 @@ public class WebConfig implements WebMvcConfigurer {
         if (!prefix.endsWith("/")) {
             prefix = prefix + "/";
         }
-        Path dir = Paths.get(appProperties.getUpload().getDir()).toAbsolutePath().normalize();
+        Path dir = blogStoragePaths.mediaDir();
         String location = dir.toUri().toString();
         if (!location.endsWith("/")) {
             location = location + "/";

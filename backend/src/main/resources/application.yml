@@ -47,8 +47,13 @@ app:
       authorize-url: https://github.com/login/oauth/authorize
       token-url: https://github.com/login/oauth/access_token
       user-api-url: https://api.github.com/user
+  storage:
+    # Object store root: local dir or NAS mount (e.g. /mnt/nas-blog)
+    root: ${BLOG_STORAGE_ROOT:data/blog-storage}
+    migrate-on-startup: ${BLOG_MIGRATE_CONTENT:false}
   upload:
-    dir: ${UPLOAD_DIR:uploads}
+    # Empty = ${BLOG_STORAGE_ROOT}/media
+    dir: ${UPLOAD_DIR:}
     public-path-prefix: /uploads
     max-bytes: 5242880
 

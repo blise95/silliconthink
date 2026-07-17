@@ -1,6 +1,8 @@
 # Silicon Think — 前端
 
-Vue 3 个人站点，Mock 数据驱动，视觉参考 [Omni-Growth](https://omni-growth.ai/index.html)。
+Vue 3 个人站点。完整项目介绍见 [根 README（中文）](../README.zh-CN.md) / [Root README (EN)](../README.md)。
+
+博客正文与图片由后端对象存储（可挂 NAS）提供；前端仍通过 API 收发 `contentMd` 与 `/uploads` URL。部署媒体反代见 [deploy/nginx.conf.example](deploy/nginx.conf.example)；NAS 方案见 [backend/deploy/nas-storage.zh-CN.md](../backend/deploy/nas-storage.zh-CN.md)。
 
 ## 环境要求
 
@@ -42,6 +44,11 @@ VITE_API_BASE_URL=http://localhost:8080
 
 Mock 认证账号：`demo` / `demo1234`（仅 `VITE_AUTH_USE_API=false` 时）。
 
+## 安全提示
+
+- 勿将含密钥的 `.env` / `.env.production` 提交到 Git
+- 生产通过同源 Nginx 访问 `/api` 与 `/uploads`，避免在前端打包真实密钥
+
 ## 目录结构
 
 ```
@@ -78,35 +85,19 @@ npm run preview
 
 ## 部署到 Linux 服务器
 
-本项目是纯前端 SPA（Mock 数据打包进 JS），**只需 Nginx 托管静态文件**，无需 Node 常驻进程。
-
-若启用真实认证，需同时部署 `backend` 并配置 CORS / 反向代理。详见仓库根 README 与 `backend/README.md`。
+本项目前端为 SPA，**Nginx 托管静态文件**。启用真实认证/博客 API 时需同时部署 `backend`。详见根 README 与 `backend/README.md`。
 
 ### 方式一：本地构建 + 上传（推荐）
 
-**1. 本地构建**
-
 ```bash
-cd frontend
-npm install
-npm run build
-```
-
-**2. 上传 `dist/` 到服务器**
-
-```bash
+cd frontend && npm install && npm run build
 ssh user@your-server "sudo mkdir -p /var/www/silliconthink"
 rsync -avz --delete dist/ user@your-server:/var/www/silliconthink/
 ```
 
-或使用脚本（需本机已配置 SSH）：
+或：`./deploy/deploy.sh user@your-server`
 
-```bash
-chmod +x deploy/deploy.sh
-./deploy/deploy.sh user@your-server
-```
-
-**3. 服务器安装 Nginx** 并配置 History 模式 `try_files`（详见原部署章节）。
+服务器 Nginx 需配置 History 模式；`/api/` 与 `/uploads/` 反代见 `deploy/nginx.conf.example`。
 
 ## 后续对接内容 API
 

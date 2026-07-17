@@ -26,6 +26,13 @@ public class BlogPostDO extends BaseDO {
 
     private String summary;
 
+    /** Relative object key, e.g. posts/1/42.md */
+    private String contentKey;
+
+    /**
+     * Legacy inline Markdown (migration fallback). New writes keep this empty;
+     * authoritative body lives in object storage referenced by contentKey.
+     */
     private String contentMd;
 
     private String coverUrl;
